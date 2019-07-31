@@ -15,7 +15,7 @@
 - 手写webpack中常见的loader
 - 手写webpack常见的plugin
 
-## webpack基础配置
+## webpack常见配置
 
 初始化package.json
 
@@ -80,6 +80,13 @@ new htmlWebpackPlugin({
 - loader还可以写成对象的形式
 
 需要使用style-loader和css-loader
+
+**loader的这种类**
+
+- 前置loader pre
+- 普通loader normal
+- 后置loader post
+- 内联loader
 
 **style-loader**
 
@@ -294,11 +301,234 @@ webpack中配置
   },
 ```
 
+#### 全局变量引入问题
 
+**expose-loader**
 
+- 内联loader
+- 暴露全局的loader
 
+使用方法
 
+```
+import $ from 'expose-loader?$!jquery'
+```
 
+webpack中的使用方法
+
+```
+rules: [
+    {
+        test: require.resolve('jquery'),
+        use: 'expose-loader?$'
+    },
+]
+```
+
+##### 模块注入$
+
+```
+const webpack = require('webpack')
+plugins: [
+    new webpack.ProvidePlugin({
+        $: 'jquery'
+    })
+]
+```
+
+忽略打包
+
+```
+externals: {
+    jquery: '$'
+}
+```
+
+#### 图片处理
+
+##### 在js中创建图片
+
+```
+import logo from './logo.png'
+let image = new Image()
+image.src = logo
+```
+
+##### css中引入图片
+
+```
+div {
+    width: 100px;
+    height: 200px;
+    background: url("./logo.png")
+}
+```
+
+安装file-loader
+
+```
+npm i file-loader -D
+```
+
+配置webpack
+
+```
+{
+	test: /\.(png|jpg|gif)$/,
+	use: 'file-loader'
+},
+```
+
+##### 在html中引入图片
+
+安装依赖
+
+```
+npm i html-withimg-loader -D
+```
+
+配置webpack
+
+```
+{
+    test:/\.html$/,
+    use: 'html-withimg-loader'
+},
+```
+
+##### 图片转base64避免发起http请求
+
+安装依赖
+
+```
+npm i url-loader -D
+```
+
+配置webpack
+
+```
+{
+    test: /\.(png|jpg|gif)/,
+    use: {
+      loader: 'url-loader',
+      options: {
+        limit: 200*1024, // 图片小于200k的时候转成base64
+        outputPath: '/img/', // 输出在哪个文件夹下面
+        publicPath: '' // 只要图片添加的地址 给某一个加cdn
+      }
+    }
+ },
+```
+
+#### 打包多页面
+
+```
+const path = require('path')
+const HtmlWebpackPlugin = require('html-webpack-plugin')
+module.exports = {
+  mode: 'development',
+  // 多入口
+  entry: {
+    home: './src/index.js',
+    other: './src/other.js'
+  },
+  output: {
+    filename: '[name].js',
+    path: path.resolve(__dirname, 'dist')
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: './index.html',
+      filename: 'index.html',
+      chunks: ['home']  // 限制只引入homejs
+    }),
+    new HtmlWebpackPlugin({
+      template: './index.html',
+      filename: 'other.html',
+      chunks: ['other']
+    }),
+  ]
+}
+```
+
+#### 配置source-map
+
+**source-map**
+
+源码映射，会单独生成一个sourcemap文件， 出错了，会标识当前报错的列和行大而全
+
+**eval-source-map**
+
+不会产生单独的文件，但是报错可以显示列和行
+
+**cheap-module-source-map**
+
+产生单独的映射文件，报错不显示列
+
+**cheap-module-eval-source-map**
+
+不产生单独的映射文件，报错不是不显示列
+
+webpack配置
+
+```
+devtool: 'source-map'
+```
+
+#### 实时进行打包watch
+
+- poll  每秒询问1000次
+- aggregateTimeout 防抖 代码一直进行输入不进行打包
+- ignored 忽略打包监控
+
+```
+watch: true,
+watchOptions: { //监控选项
+    poll: 1000, 
+    aggregateTimeout: 500,
+    ignored: /node_modules/
+},
+```
+
+#### webpack小插件
+
+**clean-webpack-plugin**
+
+打包之前清除之前打包的文件
+
+webpack配置
+
+```
+const { CleanWebpackPlugin } = require('clean-webpack-plugin')
+
+new CleanWebpackPlugin(),
+```
+
+**copy-webpack-plugin**
+
+把文件复制到打包文件下面
+
+webpack配置
+
+```
+const CopyWebpackPlugin = require('copy-webpack-plugin')
+
+new CopyWebpackPlugin([
+	{from: 'doc', to: ''}
+]),
+```
+
+**BannerPlugin**
+
+版权所有插件
+
+webpack配置
+
+```
+const webpack = require('webpack');
+
+new webpack.BannerPlugin('make 2019 by sufan')
+```
 
 
 

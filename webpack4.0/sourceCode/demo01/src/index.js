@@ -1,4 +1,3 @@
-console.log('1111111111111')
 let fn = () => {
   console.log('2222222222')
 }

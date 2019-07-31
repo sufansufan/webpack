@@ -3,6 +3,7 @@ const TerserJSPlugin = require('terser-webpack-plugin') //陪优化项，进行j
 const HtmlWebpackPlugin = require("html-webpack-plugin") // html插件
 const MiniCssExtractPlugin = require("mini-css-extract-plugin") // 抽离css文件
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin') //优化css
+const webpack = require('webpack')
 module.exports = {
   optimization: { //优化项
     minimizer: [
@@ -26,6 +27,7 @@ module.exports = {
   output: {
     filename: 'bundle.[hash:8].js', //打包的文件名
     path: path.resolve(__dirname, 'dist'),  //路径必须是绝对路径
+    // publicPath: '' // 配置公共的路径
   },
   plugins: [
     new HtmlWebpackPlugin({
@@ -39,10 +41,39 @@ module.exports = {
     }),
     new MiniCssExtractPlugin({
       filename: 'main.css'
+    }),
+    new webpack.ProvidePlugin({ //每个模块注入$
+      $: 'jquery'
     })
   ],
+  externals: { // 忽略打包
+    jquery: 'jquery'
+  },
   module: {
     rules: [
+      {
+        test:/\.html$/,
+        use: 'html-withimg-loader'
+      },
+      // {
+      //   test: /\.(png|jpg|gif)$/,
+      //   use: 'file-loader'
+      // },
+      {
+        test: /\.(png|jpg|gif)/,
+        use: {
+          loader: 'url-loader',
+          options: {
+            limit: 200*1024,
+            outputPath: '/img/', // 输出在哪个文件夹下面
+            // publicPath: '' // 只要图片添加的地址 给某一个加cdn
+          }
+        }
+      },
+      {
+        test: require.resolve('jquery'),
+        use: 'expose-loader?$'
+      },
       // {
       //   test: /\.js/,
       //   use: {
