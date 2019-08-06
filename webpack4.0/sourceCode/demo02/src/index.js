@@ -1,8 +1,16 @@
-console.log('index')
+const xhr = new XMLHttpRequest();
 
-class Log {
-  constructor() {
-    console.log('出错了111')
-  }
+xhr.open('GET','/user', true);
+xhr.onload = function() {
+  console.log(xhr.response);
 }
-let log = new Log()
+
+xhr.send();
+// console.log('index')
+
+// class Log {
+//   constructor() {
+//     console.log('出错了111')
+//   }
+// }
+// let log = new Log()
