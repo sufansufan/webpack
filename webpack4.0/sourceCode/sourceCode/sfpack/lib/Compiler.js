@@ -5,8 +5,9 @@ const traverse = require('@babel/traverse').default
 const babelTypes = require('@babel/types')
 const generator = require('@babel/generator').default
 const ejs = require('ejs')
+const { SyncHook } = require('tapable')
 //  babylon 主要就是把源码 转换成ast
-//  @babel/traverse-
+//  @babel/traverse
 //  @babel/types
 //  @babel/generator
 class Compiler {
@@ -20,9 +21,41 @@ class Compiler {
     this.entry = config.entry // 入口路径
     // 工作路径
     this.root = process.cwd()
+    this.hooks = {
+      entryOption: new SyncHook(),
+      compile: new SyncHook(),
+      afterCompile: new SyncHook(),
+      afterPulgins: new SyncHook(),
+      run: new SyncHook(),
+      emit: new SyncHook(),
+      done: new SyncHook()
+    }
+    // 如果传递了plugins参数
+    let plugins = this.config.plugins;
+    if(Array.isArray(plugins)){
+      plugins.forEach(plugin => {
+        plugin.apply(this)
+      })
+    }
+    this.hooks.afterCompile.call()
   }
   getSource(modulePath) {
-    let content = fs.readFileSync(modulePath, 'utf8')
+    let rules = this.config.module.rules;
+    let content = fs.readFileSync(modulePath, 'utf8');
+    for (let i = 0; i < rules.length; i++) {
+      let {test, use} = rules[i]
+      let len = use.length - 1
+      if(test.test(modulePath)) {
+        function normalLoader() {
+          let loader = require(use[len--])
+          content = loader(content)
+          if(len >= 0){
+            normalLoader()
+          }
+        }
+        normalLoader()
+      }
+    }
     return content;
   }
   // 解析源码
@@ -68,7 +101,6 @@ class Compiler {
     // 用数据 渲染我们的模板
     // 拿到输出到那个目录下面 输出路径
     let main = path.join(this.config.output.path, this.config.output.filename);
-    console.log(main, '主路径')
     // 读取模板文件
     let templateStr = this.getSource(path.join(__dirname, 'main.ejs'))
     let code = ejs.render(
@@ -80,12 +112,17 @@ class Compiler {
     fs.writeFileSync(main, this.assets[main])
   }
   run() {
+    this.hooks.run.call();
     // 执行 并创建模块的依赖关系
+    this.hooks.compile.call();
     this.buildModule(
       path.resolve(this.root, this.entry), true
     )
+    this.hooks.afterCompile.call();
     // 发射一个文件， 打包后的文件
     this.emitFile();
+    this.hooks.emit.call();
+    this.hooks.done.call();
   }
 }
 

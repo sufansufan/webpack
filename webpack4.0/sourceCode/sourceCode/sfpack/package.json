@@ -1,0 +1,25 @@
+{
+  "name": "sfpack",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bin": {
+    "sf-pack": "./bin/sf-pack.js"
+  },
+  "devDependencies": {
+    "@babel/generator": "^7.5.5",
+    "@babel/traverse": "^7.5.5",
+    "@babel/types": "^7.5.5",
+    "babylon": "^6.18.0"
+  },
+  "dependencies": {
+    "ejs": "^2.6.2",
+    "tapable": "^1.1.3"
+  }
+}
